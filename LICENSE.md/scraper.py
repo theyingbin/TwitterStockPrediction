@@ -40,6 +40,16 @@ def get_stock_price(stock_check_stop):
 
         # Also dump time and stock price to a file
 
+def write_to_file(file_name, data):
+    i = 0
+    fname = file_name + '.json'
+    while os.path.isfile(fname):
+        i += 1
+        fname = file_name + str(i) + '.json'
+
+    with open(fname, 'w') as outfile:
+        json.dump(data, outfile)
+
 class StreamHandler(StreamListener):
     scraped_data = []
     tweet_count = 0
@@ -51,19 +61,14 @@ class StreamHandler(StreamListener):
         self.scraped_data.append(tweet_data)
         self.tweet_count += 1
 
-        print(str(stock_val))
+        print('#############################')
+        print('Tweet: ' + tweet_data['text'])
+        print('S&P100 Val: ' + str(stock_val))
 
         if self.tweet_count > 499:
-            i = 0
-            fname = 'sample_tweets.json'
-            while os.path.isfile(fname):
-                i += 1
-                fname = 'sample_tweets' + i + '.json'
-
-            with open(fname, 'w') as outfile:
-                json.dump(self.scraped_data, outfile)
-                self.scraped_data = {}
-                self.tweet_count = 0
+            write_to_file('sample_json', scraped_data)
+            self.scraped_data = {}
+            self.tweet_count = 0
 
         # Add code to also process the tweet data (basically only keep the relevant data),
         # add it to a different array and dump it to a different file
@@ -71,15 +76,19 @@ class StreamHandler(StreamListener):
         return True
 
     def on_error(self, status):
-        print(status)
+        print(status)  
 
 if __name__ == '__main__':
+    try:
+        print("Starting stock value logging...")
+        stock_check_stop = threading.Event()
+        get_stock_price(stock_check_stop)
 
-    stock_check_stop = threading.Event()
-    get_stock_price(stock_check_stop)
-
-    handler = StreamHandler()
-    auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-    auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
-    stream = Stream(auth, handler)
-    stream.filter(track=SNP_100)
+        print("Monitoring tweets...")
+        handler = StreamHandler()
+        auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+        auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
+        stream = Stream(auth, handler)
+        stream.filter(track=SNP_100, async=True)
+    except (KeyboardInterrupt, SystemExit):
+        write_to_file('sample_json', handler.scraped_data)
