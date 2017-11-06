@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python3 scraper.py
+python ./code/scraper.py
