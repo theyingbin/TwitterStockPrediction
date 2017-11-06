@@ -4,12 +4,13 @@ import threading
 import requests
 import datetime
 from tweepy import OAuthHandler, Stream, StreamListener
-from twitterKeys import CONSUMER_KEY,CONSUMER_SECRET,ACCESS_TOKEN,ACCESS_TOKEN_SECRET
-# CONSUMER_KEY = 'getyoown'
-# CONSUMER_SECRET = 'getyoown'
-# ACCESS_TOKEN = 'getyoown'
-# ACCESS_TOKEN_SECRET = 'getyoown'
+from twitterKeys import CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET
+# CONSUMER_KEY = ''
+# CONSUMER_SECRET = ''
+# ACCESS_TOKEN = ''
+# ACCESS_TOKEN_SECRET = ''
 
+# Stocks in the S&P 100 Index
 SNP_100 = ['$AAPL','$ABBV','$ABT','$ACN','$AGN','$AIG','$ALL',
             '$AMGN','$AMZN','$AXP','$BA','$BAC','$BIIB','$BK',
             '$BLK','$BMY','$BRK.B','$C','$CAT','$CELG','$CHTR',
@@ -25,11 +26,13 @@ SNP_100 = ['$AAPL','$ABBV','$ABT','$ACN','$AGN','$AIG','$ALL',
             '$SO','$SPG','$T','$TGT','$TWX','$TXN','$UNH','$UNP',
             '$UPS','$USB','$UTX','$V','$VZ','$WBA','$WFC','$WMT','$XOM']
 
+            
 stock_val = 0
-
+stock_data = []
 def get_stock_price(stock_check_stop):
-    global stock_val
+    global stock_val, stock_data
     if not stock_check_stop.is_set():
+        # Query google for S&P100 Index value
         stockName = 'INDEXSP:SP100'
         query = {'q': stockName, 'output': 'json'}
         r = requests.get('https://finance.google.com/finance', params=query)
@@ -38,20 +41,32 @@ def get_stock_price(stock_check_stop):
         json_string = json_string[:-2]
         json_stock = json.loads(json_string)
         stock_val = json_stock['l']
+        
+        # Rerun query in 15 minutes
         threading.Timer(15*60, get_stock_price, [stock_check_stop]).start()
 
         # Also dump time and stock price to a file
         curTime = datetime.datetime.now()
         stockInfo = {'stock_name': stockName, 'stock_price': stock_val, 'timestamp': str(curTime)}
-        write_to_file('stock_prices', stockInfo)
+        stock_data.append(stockInfo)
+        write_to_file('stock_prices', stock_data)
 
+file_name_map = {}
 def write_to_file(file_name, data):
-    i = 0
-    fname = file_name + '.json'
-    while os.path.isfile(fname):
-        i += 1
-        fname = file_name + str(i) + '.json'
+    global file_name_map
+    # Ensure that file name does not already exist,
+    # If it does exist, create append a count to the file name
+    if file_name in file_name_map:
+        fname = file_name_map[file_name]
+    else:
+        i = 0
+        fname = file_name + '.json'
+        while os.path.isfile(fname):
+            i += 1
+            fname = file_name + str(i) + '.json'
+        file_name_map[file_name] = fname
 
+    # Write the object data to a file in JSON format
     with open(fname, 'w') as outfile:
         json.dump(data, outfile)
 
@@ -60,7 +75,10 @@ class StreamHandler(StreamListener):
         self.scraped_data = []
         self.tweet_count = 0
         self.filtered_data = []
-        self.importantAttrs = ['text', 'created_at', 'quote_count', 'reply_count', 'retweet_count', 'favorite_count']    # add important attributes here. we should use follower count as a metric since retweets/likes not good
+        # We will be adding more important attributes here. we should use follower count as a metric since retweets/likes not the best
+        self.importantAttrs = ['text', 'created_at', 'quote_count', 'reply_count', 'retweet_count', 'favorite_count']
+        # We might also want to incorporate user attributes in the future
+        self.importantUserAttrs = ['followers_count', 'friends_count', 'listed_count', 'verified']
 
     def on_data(self, data):
         global stock_val
@@ -69,30 +87,30 @@ class StreamHandler(StreamListener):
         self.scraped_data.append(tweet_data)
         self.tweet_count += 1
 
-        # gets the important attributes of the tweet
+        # Filter for the important attributes of the tweet
         filtered_tweet = {}
         for attr in self.importantAttrs:
             if attr in tweet_data:
                 filtered_tweet[attr] = tweet_data[attr]
             else:
                 print(attr + " doesn't exist in the tweet")
+
+        for attr in self.importantUserAttrs:
+            user_data = tweet_data['user']
+            if attr in user_data:
+                filtered_tweet[attr] = user_data[attr]
+            else:
+                print(attr + " doesn't exist in the tweet")
+
         self.filtered_data.append(filtered_tweet)
 
         print('#############################')
         print('Tweet: ' + tweet_data['text'])
         print('S&P100 Val: ' + str(stock_val))
 
-        if self.tweet_count > 0:
-            write_to_file('sample_json', self.scraped_data)
-            self.scraped_data = []
-
-            write_to_file('filtered_json', self.filtered_data)
-            self.filtered_data = []
-
-            self.tweet_count = 0
-
-        # Add code to also process the tweet data (basically only keep the relevant data),
-        # add it to a different array and dump it to a different file
+        # Dump data to files
+        write_to_file('sample_tweets', self.scraped_data)
+        write_to_file('filtered_tweets', self.filtered_data)
 
         return True
 
@@ -100,16 +118,13 @@ class StreamHandler(StreamListener):
         print(status)  
 
 if __name__ == '__main__':
-    try:
-        print("Starting stock value logging...")
-        stock_check_stop = threading.Event()
-        get_stock_price(stock_check_stop)
+    print("Starting stock value logging...")
+    stock_check_stop = threading.Event()
+    get_stock_price(stock_check_stop)
 
-        print("Monitoring tweets...")
-        handler = StreamHandler()
-        auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-        auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
-        stream = Stream(auth, handler)
-        stream.filter(track=SNP_100, async=True)
-    except (KeyboardInterrupt, SystemExit):
-        write_to_file('sample_json', handler.scraped_data)
+    print("Monitoring tweets...")
+    handler = StreamHandler()
+    auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+    auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
+    stream = Stream(auth, handler)
+    stream.filter(track=SNP_100, async=True)
