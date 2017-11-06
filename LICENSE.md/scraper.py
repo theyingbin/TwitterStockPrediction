@@ -2,12 +2,13 @@ import json
 import os.path
 import threading
 import requests
+import datetime
 from tweepy import OAuthHandler, Stream, StreamListener
-
-CONSUMER_KEY = 'getyoown'
-CONSUMER_SECRET = 'getyoown'
-ACCESS_TOKEN = 'getyoown'
-ACCESS_TOKEN_SECRET = 'getyoown'
+from twitterKeys import CONSUMER_KEY,CONSUMER_SECRET,ACCESS_TOKEN,ACCESS_TOKEN_SECRET
+# CONSUMER_KEY = 'getyoown'
+# CONSUMER_SECRET = 'getyoown'
+# ACCESS_TOKEN = 'getyoown'
+# ACCESS_TOKEN_SECRET = 'getyoown'
 
 SNP_100 = ['$AAPL','$ABBV','$ABT','$ACN','$AGN','$AIG','$ALL',
             '$AMGN','$AMZN','$AXP','$BA','$BAC','$BIIB','$BK',
@@ -29,7 +30,8 @@ stock_val = 0
 def get_stock_price(stock_check_stop):
     global stock_val
     if not stock_check_stop.is_set():
-        query = {'q': 'INDEXSP:SP100', 'output': 'json'}
+        stockName = 'INDEXSP:SP100'
+        query = {'q': stockName, 'output': 'json'}
         r = requests.get('https://finance.google.com/finance', params=query)
         json_string = bytes.decode(r.content)
         json_string = json_string.split("[", 1)[1]
@@ -39,6 +41,9 @@ def get_stock_price(stock_check_stop):
         threading.Timer(15*60, get_stock_price, [stock_check_stop]).start()
 
         # Also dump time and stock price to a file
+        curTime = datetime.datetime.now()
+        stockInfo = {'stock_name': stockName, 'stock_price': stock_val, 'timestamp': str(curTime)}
+        write_to_file('stock_prices', stockInfo)
 
 def write_to_file(file_name, data):
     i = 0
@@ -51,8 +56,11 @@ def write_to_file(file_name, data):
         json.dump(data, outfile)
 
 class StreamHandler(StreamListener):
-    scraped_data = []
-    tweet_count = 0
+    def __init__(self):
+        self.scraped_data = []
+        self.tweet_count = 0
+        self.filtered_data = []
+        self.importantAttrs = ['text', 'created_at', 'quote_count', 'reply_count', 'retweet_count', 'favorite_count']    # add important attributes here. we should use follower count as a metric since retweets/likes not good
 
     def on_data(self, data):
         global stock_val
@@ -61,13 +69,26 @@ class StreamHandler(StreamListener):
         self.scraped_data.append(tweet_data)
         self.tweet_count += 1
 
+        # gets the important attributes of the tweet
+        filtered_tweet = {}
+        for attr in self.importantAttrs:
+            if attr in tweet_data:
+                filtered_tweet[attr] = tweet_data[attr]
+            else:
+                print(attr + " doesn't exist in the tweet")
+        self.filtered_data.append(filtered_tweet)
+
         print('#############################')
         print('Tweet: ' + tweet_data['text'])
         print('S&P100 Val: ' + str(stock_val))
 
-        if self.tweet_count > 499:
-            write_to_file('sample_json', scraped_data)
-            self.scraped_data = {}
+        if self.tweet_count > 0:
+            write_to_file('sample_json', self.scraped_data)
+            self.scraped_data = []
+
+            write_to_file('filtered_json', self.filtered_data)
+            self.filtered_data = []
+
             self.tweet_count = 0
 
         # Add code to also process the tweet data (basically only keep the relevant data),
