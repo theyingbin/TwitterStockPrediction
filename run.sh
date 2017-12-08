@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python ./code/scraper.py
+python3 ./code/scraper.py
