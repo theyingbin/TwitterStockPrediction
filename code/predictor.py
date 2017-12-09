@@ -1,21 +1,26 @@
 import json
 import time
+import numpy as np
 
 from itertools import repeat
 from multiprocessing import Pool
 
 from sklearn import tree
 from sklearn import preprocessing
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
-
 from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
+from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import BaggingClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
 from sklearn.externals import joblib
 from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import normalize
 
 from scipy.spatial import distance
 from scipy.ndimage.filters import gaussian_filter
@@ -28,7 +33,7 @@ bucket_data = []
 ground_truth_dict = {}
 bucket_data_dict = {}
 
-bucket_keys = {'count', 'retweets', 'favorites', 'followers', 'profile_picture', 'polarity', 'subjectivity'}
+bucket_keys = {'count', 'retweets', 'favorites', 'followers', 'verified', 'profile_picture', 'polarity', 'subjectivity'}
 
 def get_next_bucket_time(curr):
 	return str(int(curr) + FIFTEEN_MIN_IN_SEC);
@@ -58,15 +63,21 @@ def load_data():
 			ground_truth.append(1 if (end_bucket_stock - start_bucket_stock > 0) else 0)
 			bucket_data.append(convert_bucket_to_array(bucket_data_dict[stock_time]))
 
-	ground_truth = ground_truth[1:]
-	bucket_data = bucket_data[:-1]
+	ground_truth = np.array(ground_truth[1:], dtype=float)
+	bucket_data = np.matrix(bucket_data[:-1], dtype=float)
 
-def get_classifier(topology_structure):
+
+def get_classifier():
 	# n_jobs = -1 allows us to use all cores of our machine
-	return MLPClassifier(hidden_layer_sizes=topology_structure, activation='logistic')
+	return MLPClassifier(activation='logistic')  # can try to set hidden_layer_sizes but found that 1 HL works best. also after ~50 nodes, its about the same
 	# return RandomForestClassifier(n_estimators=10, n_jobs = -1)
 	# return BaggingClassifier(KNeighborsClassifier(),max_samples=0.5, max_features=0.5)
 	# return MLP()
+	# return BaggingClassifier(RandomForestClassifier(n_estimators=10), max_samples=0.8, max_features=0.8)
+	# return KNeighborsClassifier()
+	# return MLPClassifier()
+	# return AdaBoostClassifier()
+	# return SVC()
 
 def train_model(output_file_name):
 	# Create the classifier and fit the data to it
@@ -76,21 +87,31 @@ def train_model(output_file_name):
 	# Dump the generated classifier to an output file for later use
 	joblib.dump(my_classifier, output_file_name)
 
-def test_model(X_train, X_test, y_train, y_test, topology_structure):
 
-	# Create the classifier and trains it on the the training data
-	my_classifier = get_classifier(topology_structure)
-	my_classifier.fit(X_train, y_train)
+def test_model(splits):
+	accurs = []
+	kf = KFold(n_splits=splits, shuffle=True)
+	for train_index, test_index in kf.split(bucket_data):
+		X_train, X_test = bucket_data[train_index], bucket_data[test_index]
+		y_train, y_test = ground_truth[train_index], ground_truth[test_index]
 
-	# Tests the classifier on the testing data and prints the accuracy results
-	predictions = my_classifier.predict(X_test)
-	print(predictions)
-	print(classification_report(y_test, predictions))
-	print(accuracy_score(y_test, predictions))
+		# Create the classifier and trains it on the the training data
+		my_classifier = get_classifier()
+		my_classifier.fit(X_train, y_train)
 
+		# Tests the classifier on the testing data and prints the accuracy results
+		predictions = my_classifier.predict(X_test)
+		print(predictions)
+		print(classification_report(y_test, predictions))
+		accuracy = accuracy_score(y_test, predictions)
+		print("accuracy: " + str(accuracy))
+		accurs.append(float(accuracy))
+
+	print("average accuracy: " + str(np.mean(accurs)))
 
 load_data()
-X_train, X_test, y_train, y_test = train_test_split(bucket_data, ground_truth, test_size=0.2, random_state=0)
-# train_model("model.dmp")
-for i in range(1, 120):
-	test_model(X_train, X_test, y_train, y_test, tuple([i]))
+print("Testing on " + str(len(ground_truth)) + " buckets")
+test_model(5)
+
+# for i in range(1, 120):
+# 	test_model(10, tuple([i])) 
