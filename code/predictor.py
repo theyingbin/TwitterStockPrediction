@@ -7,9 +7,13 @@ from multiprocessing import Pool
 from sklearn import tree
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
+
 from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import BaggingClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.externals import joblib
 
 from scipy.spatial import distance
@@ -22,7 +26,7 @@ bucket_data = []
 ground_truth_dict = {}
 bucket_data_dict = {}
 
-bucket_keys = {'count', 'retweets', 'favorites', 'followers', 'verified', 'profile_picture', 'polarity', 'subjectivity'}
+bucket_keys = {'count', 'retweets', 'favorites', 'followers', 'profile_picture', 'polarity', 'subjectivity'}
 
 def get_next_bucket_time(curr):
 	return str(int(curr) + FIFTEEN_MIN_IN_SEC);
@@ -57,7 +61,8 @@ def load_data():
 
 def get_classifier():
 	# n_jobs = -1 allows us to use all cores of our machine
-	return RandomForestClassifier(n_jobs = -1)
+	return RandomForestClassifier(n_estimators=10, n_jobs = -1)
+	# return BaggingClassifier(KNeighborsClassifier(),max_samples=0.5, max_features=0.5)
 	# return MLP()
 
 def train_model(output_file_name):
@@ -67,6 +72,7 @@ def train_model(output_file_name):
 
 	# Dump the generated classifier to an output file for later use
 	joblib.dump(my_classifier, output_file_name)
+
 
 def test_model(test_size):
 	# Split the data into training and testing data
@@ -78,10 +84,11 @@ def test_model(test_size):
 
 	# Tests the classifier on the testing data and prints the accuracy results
 	predictions = my_classifier.predict(X_test)
+	print(predictions)
 	print(classification_report(y_test, predictions))
 	print(accuracy_score(y_test, predictions))
 
 
 load_data()
-train_model("model.dmp")
-test_model(0.2)
+print("Testing on " + str(len(ground_truth)) + " buckets")
+test_model(0.25)

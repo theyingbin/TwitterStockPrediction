@@ -32,7 +32,7 @@ def get_past_stock_price(stock_check_stop):
 		# for every minute
         stockName = 'SP100'
         period = 60
-        days = '7d'
+        days = '10d'
         query = {'i': period, 'p' : days, 'q': stockName, 'output': 'json'}
         r = requests.get('https://finance.google.com/finance/getprices?', params=query)
 		
@@ -71,8 +71,6 @@ def get_past_stock_price(stock_check_stop):
                 new_dict_[a] = float(item[1])
 
         #new_dict_json = [{"time": k, "stock_price": v} for k,v in new_dict_item]
-		
-        thefile = open('minutestock.txt', 'w')
 		
 		#new_list is a list that contains 7 lists, one for each days
 		#Inside each day-list, each item is a list representing each minute
