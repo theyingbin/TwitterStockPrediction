@@ -68,9 +68,11 @@ def load_data():
 def get_classifier():
 	# n_jobs = -1 allows us to use all cores of our machine
 	return BaggingClassifier(RandomForestClassifier(n_estimators=10), max_samples=0.8, max_features=0.8)
+	# return KNeighborsClassifier()
 	# return MLPClassifier()
 	# return AdaBoostClassifier()
 	# return SVC()
+	# return MLPClassifier(hidden_layer_sizes=topology_structure, activation='logistic')
 
 def train_model(output_file_name):
 	# Create the classifier and fit the data to it
@@ -105,3 +107,6 @@ def test_model(splits):
 load_data()
 print("Testing on " + str(len(ground_truth)) + " buckets")
 test_model(10)
+
+# for i in range(1, 120):
+# 	test_model(10, tuple([i])) 
