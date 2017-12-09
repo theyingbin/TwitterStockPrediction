@@ -78,6 +78,7 @@ def test_model(test_size):
 
 	# Tests the classifier on the testing data and prints the accuracy results
 	predictions = my_classifier.predict(X_test)
+	print(classification_report(y_test, predictions))
 	print(accuracy_score(y_test, predictions))
 
 
