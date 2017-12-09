@@ -64,7 +64,7 @@ def load_api():
     auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
     # load the twitter API via tweepy
-    return tweepy.API(auth)
+    return tweepy.API(auth, wait_on_rate_limit=True)
             
 stock_val = 0
 stock_data = []

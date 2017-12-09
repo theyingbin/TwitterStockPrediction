@@ -1,5 +1,6 @@
 import json
 import time
+from textblob import TextBlob
 
 FIFTEEN_IN_SEC = 15 * 60
 
@@ -20,15 +21,21 @@ def add_to_buckets(tweet):
 			buckets[bucket_time]['followers'] = 0
 			buckets[bucket_time]['verified'] = 0
 			buckets[bucket_time]['profile_picture'] = 0
+			buckets[bucket_time]['polarity'] = 0
+			buckets[bucket_time]['subjectivity'] = 0
 		buckets[bucket_time]['count'] += 1
 		buckets[bucket_time]['retweets'] += tweet['retweet_count']
 		buckets[bucket_time]['favorites'] += tweet['favorite_count']
 		buckets[bucket_time]['followers'] += tweet['user']['followers_count']
 		buckets[bucket_time]['verified'] += 1 if (tweet['user']['verified']) else 0
 		buckets[bucket_time]['profile_picture'] += 1 if (tweet['user']['profile_image_url'] != '') else 0
+
+		analysis = TextBlob(tweet['text'])
+		buckets[bucket_time]['polarity'] += analysis.sentiment.polarity
+		buckets[bucket_time]['subjectivity'] += analysis.sentiment.subjectivity
 		# print(tweet['created_at'] + " added to " + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(bucket_time)))
 
-with open('sample_tweets.json') as input_file:
+with open('../tweets3.json') as input_file:
 	for i, line in enumerate(input_file):
 		line = line[:-1]
 		try:
@@ -45,6 +52,8 @@ for key in buckets:
 	buckets[key]['followers'] /= count
 	buckets[key]['verified'] /= count
 	buckets[key]['profile_picture'] /= count
+	buckets[key]['polarity'] /= count
+	buckets[key]['subjectivity'] /= count
 	print(buckets[key])
 	
 with open('bucketed_tweets.json', 'w') as outfile:
