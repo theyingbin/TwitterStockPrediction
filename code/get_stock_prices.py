@@ -3,24 +3,6 @@ import os.path
 import threading
 import requests
 import datetime
-from tweepy import OAuthHandler, Stream, StreamListener
-
-
-# Stocks in the S&P 100 Index
-SNP_100 = ['$AAPL','$ABBV','$ABT','$ACN','$AGN','$AIG','$ALL',
-            '$AMGN','$AMZN','$AXP','$BA','$BAC','$BIIB','$BK',
-            '$BLK','$BMY','$BRK.B','$C','$CAT','$CELG','$CHTR',
-            '$CL','$CMCSA','$COF','$COP','$COST','$CSCO','$CVS',
-            '$CVX','$DHR','$DIS','$DUK','$DWDP','$EMR','$EXC',
-            '$F','$FB','$FDX','$FOX','$FOXA','$GD','$GE','$GILD',
-            '$GM','$GOOG','$GOOGL','$GS','$HAL','$HD','$HON',
-            '$IBM','$INTC','$JNJ','$JPM','$KHC','$KMI','$KO',
-            '$LLY','$LMT','$LOW','$MA','$MCD','$MDLZ','$MDT',
-            '$MET','$MMM','$MO','$MON','$MRK','$MS','$MSFT',
-            '$NEE','$NKE','$ORCL','$OXY','$PCLN','$PEP','$PFE',
-            '$PG','$PM','$PYPL','$QCOM','$RTN','$SBUX','$SLB',
-            '$SO','$SPG','$T','$TGT','$TWX','$TXN','$UNH','$UNP',
-            '$UPS','$USB','$UTX','$V','$VZ','$WBA','$WFC','$WMT','$XOM']
 
             
 stock_val = 0
