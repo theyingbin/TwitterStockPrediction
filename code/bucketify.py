@@ -7,11 +7,10 @@ FIFTEEN_MIN_IN_SEC = 15 * 60
 buckets = {}
 
 def compute_tweet_weight(tweet):
-	# interactors = tweet['retweet_count'] + tweet['favorite_count']
-	# followers = tweet['user']['followers_count']
-	# user_attrs = 0.6 + 0.2 * (1 if (tweet['user']['verified']) else 0) + 0.2 * (0 if (tweet['user']['default_profile_image']) else 1) 
-	# return 1 + 0.05 * (0.8 * (100 if interactors > 100 else interactors) + 0.2 * (100 if followers > 100 else followers) * user_attrs)
-	return 1
+	interactors = tweet['retweet_count'] + tweet['favorite_count']
+	followers = tweet['user']['followers_count']
+	user_attrs = 0.1 * (1 if (tweet['user']['verified']) else 0) + 0.05 * (0 if (tweet['user']['default_profile_image']) else 1) 
+	return 1 + user_attrs + (0.05 if interactors > 20 else 0)
 
 def get_closest_bucket(tweet_time):
 	epoch_time = time.mktime(time.strptime(tweet_time,"%a %b %d %H:%M:%S +0000 %Y"))

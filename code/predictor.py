@@ -91,4 +91,4 @@ def test_model(test_size):
 
 load_data()
 print("Testing on " + str(len(ground_truth)) + " buckets")
-test_model(0.25)
+test_model(0.2)
