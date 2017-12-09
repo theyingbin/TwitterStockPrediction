@@ -11,9 +11,11 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
+from sklearn.neural_network import MLPClassifier
 
 from scipy.spatial import distance
 from scipy.ndimage.filters import gaussian_filter
+
 
 FIFTEEN_MIN_IN_SEC = 15 * 60
 
@@ -55,9 +57,9 @@ def load_data():
 	ground_truth = ground_truth[1:]
 	bucket_data = bucket_data[:-1]
 
-def get_classifier():
+def get_classifier(topology_structure):
 	# n_jobs = -1 allows us to use all cores of our machine
-	return RandomForestClassifier(n_jobs = -1)
+	return MLPClassifier(hidden_layer_sizes=topology_structure, activation='logistic')
 	# return MLP()
 
 def train_model(output_file_name):
@@ -68,12 +70,11 @@ def train_model(output_file_name):
 	# Dump the generated classifier to an output file for later use
 	joblib.dump(my_classifier, output_file_name)
 
-def test_model(test_size):
+def test_model(X_train, X_test, y_train, y_test, topology_structure):
 	# Split the data into training and testing data
-	X_train, X_test, y_train, y_test = train_test_split(bucket_data, ground_truth, test_size=test_size)
 
 	# Create the classifier and trains it on the the training data
-	my_classifier = get_classifier()
+	my_classifier = get_classifier(topology_structure)
 	my_classifier.fit(X_train, y_train)
 
 	# Tests the classifier on the testing data and prints the accuracy results
@@ -83,5 +84,7 @@ def test_model(test_size):
 
 
 load_data()
-train_model("model.dmp")
-test_model(0.2)
+X_train, X_test, y_train, y_test = train_test_split(bucket_data, ground_truth, test_size=0.2, random_state=0)
+# train_model("model.dmp")
+for i in range(1, 120):
+	test_model(X_train, X_test, y_train, y_test, tuple([i]))

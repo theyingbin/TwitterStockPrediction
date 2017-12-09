@@ -32,7 +32,7 @@ def get_past_stock_price(stock_check_stop):
 		# for every minute
         stockName = 'SP100'
         period = 60
-        days = '7d'
+        days = '12d'
         query = {'i': period, 'p' : days, 'q': stockName, 'output': 'json'}
         r = requests.get('https://finance.google.com/finance/getprices?', params=query)
 		

@@ -176,7 +176,7 @@ class TweetScraper():
         try:
             found_ids = set()
             for query in self.queries:
-                new_tweets = self.api.search(query, count=100) if self.max_id is None else self.api.search(query, count=100, max_id=self.max_id)
+                new_tweets = self.api.search(query, count=100) if self.max_id is None else self.api.search(query, count=100, max_id=self.max_id, since_id=938578038392008706)
                 
                 print('found',len(new_tweets),'tweets')
                 
@@ -197,7 +197,8 @@ class TweetScraper():
                     append_to_file('tweets', tweets)
                     total_tweets += unique_tweets
                     print('found ' + str(unique_tweets) + ' unique tweets')
-            self.max_id = min(found_ids) - 1
+            if(found_ids):
+                self.max_id = min(found_ids) - 1
 
         except tweepy.TweepError as e:
             print('Error ' + e + ' occured.')
