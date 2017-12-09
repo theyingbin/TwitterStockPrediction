@@ -7,9 +7,13 @@ from multiprocessing import Pool
 from sklearn import tree
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
+
 from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import BaggingClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.externals import joblib
 from sklearn.neural_network import MLPClassifier
 
@@ -24,7 +28,7 @@ bucket_data = []
 ground_truth_dict = {}
 bucket_data_dict = {}
 
-bucket_keys = {'count', 'retweets', 'favorites', 'followers', 'verified', 'profile_picture', 'polarity', 'subjectivity'}
+bucket_keys = {'count', 'retweets', 'favorites', 'followers', 'profile_picture', 'polarity', 'subjectivity'}
 
 def get_next_bucket_time(curr):
 	return str(int(curr) + FIFTEEN_MIN_IN_SEC);
@@ -39,10 +43,10 @@ def load_data():
 	global ground_truth
 	global bucket_data
 
-	with open('json_minute_stock.json') as input_file:
+	with open('../data/json_minute_stock.json') as input_file:
 		ground_truth_dict = json.load(input_file)
 		
-	with open('bucketed_tweets.json') as input_file:
+	with open('../data/bucketed_tweets.json') as input_file:
 		bucket_data_dict = json.load(input_file)
 
 	stock_times = ground_truth_dict.keys()
@@ -60,6 +64,8 @@ def load_data():
 def get_classifier(topology_structure):
 	# n_jobs = -1 allows us to use all cores of our machine
 	return MLPClassifier(hidden_layer_sizes=topology_structure, activation='logistic')
+	# return RandomForestClassifier(n_estimators=10, n_jobs = -1)
+	# return BaggingClassifier(KNeighborsClassifier(),max_samples=0.5, max_features=0.5)
 	# return MLP()
 
 def train_model(output_file_name):
@@ -71,7 +77,6 @@ def train_model(output_file_name):
 	joblib.dump(my_classifier, output_file_name)
 
 def test_model(X_train, X_test, y_train, y_test, topology_structure):
-	# Split the data into training and testing data
 
 	# Create the classifier and trains it on the the training data
 	my_classifier = get_classifier(topology_structure)
@@ -79,6 +84,7 @@ def test_model(X_train, X_test, y_train, y_test, topology_structure):
 
 	# Tests the classifier on the testing data and prints the accuracy results
 	predictions = my_classifier.predict(X_test)
+	print(predictions)
 	print(classification_report(y_test, predictions))
 	print(accuracy_score(y_test, predictions))
 

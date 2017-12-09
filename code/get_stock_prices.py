@@ -3,24 +3,6 @@ import os.path
 import threading
 import requests
 import datetime
-from tweepy import OAuthHandler, Stream, StreamListener
-
-
-# Stocks in the S&P 100 Index
-SNP_100 = ['$AAPL','$ABBV','$ABT','$ACN','$AGN','$AIG','$ALL',
-            '$AMGN','$AMZN','$AXP','$BA','$BAC','$BIIB','$BK',
-            '$BLK','$BMY','$BRK.B','$C','$CAT','$CELG','$CHTR',
-            '$CL','$CMCSA','$COF','$COP','$COST','$CSCO','$CVS',
-            '$CVX','$DHR','$DIS','$DUK','$DWDP','$EMR','$EXC',
-            '$F','$FB','$FDX','$FOX','$FOXA','$GD','$GE','$GILD',
-            '$GM','$GOOG','$GOOGL','$GS','$HAL','$HD','$HON',
-            '$IBM','$INTC','$JNJ','$JPM','$KHC','$KMI','$KO',
-            '$LLY','$LMT','$LOW','$MA','$MCD','$MDLZ','$MDT',
-            '$MET','$MMM','$MO','$MON','$MRK','$MS','$MSFT',
-            '$NEE','$NKE','$ORCL','$OXY','$PCLN','$PEP','$PFE',
-            '$PG','$PM','$PYPL','$QCOM','$RTN','$SBUX','$SLB',
-            '$SO','$SPG','$T','$TGT','$TWX','$TXN','$UNH','$UNP',
-            '$UPS','$USB','$UTX','$V','$VZ','$WBA','$WFC','$WMT','$XOM']
 
             
 stock_val = 0
@@ -32,7 +14,7 @@ def get_past_stock_price(stock_check_stop):
 		# for every minute
         stockName = 'SP100'
         period = 60
-        days = '12d'
+        days = '10d'
         query = {'i': period, 'p' : days, 'q': stockName, 'output': 'json'}
         r = requests.get('https://finance.google.com/finance/getprices?', params=query)
 		
@@ -82,7 +64,7 @@ def get_past_stock_price(stock_check_stop):
             thefile.write("%s\n" % item)
             #print (item)
 			
-        with open('json_minute_stock.json', "w", encoding="utf8") as outfile:
+        with open('../data/json_minute_stock.json', "w", encoding="utf8") as outfile:
             json.dump(new_dict_,outfile)
 			
         #with open('json_minute_stock.json') as json_data:
