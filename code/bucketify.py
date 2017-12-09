@@ -2,17 +2,17 @@ import json
 import time
 from textblob import TextBlob
 
-FIFTEEN_IN_SEC = 15 * 60
+FIFTEEN_MIN_IN_SEC = 15 * 60
 
 buckets = {}
 
 def get_closest_bucket(tweet_time):
 	epoch_time = time.mktime(time.strptime(tweet_time,"%a %b %d %H:%M:%S +0000 %Y"))
-	return int(epoch_time - (epoch_time % FIFTEEN_IN_SEC))
+	return int(epoch_time - (epoch_time % FIFTEEN_MIN_IN_SEC))
 
 def add_to_buckets(tweet):
 	tweet_time = get_closest_bucket(tweet['created_at'])
-	for bucket_time in range(tweet_time - FIFTEEN_IN_SEC * 3, tweet_time + FIFTEEN_IN_SEC, FIFTEEN_IN_SEC):
+	for bucket_time in range(tweet_time - FIFTEEN_MIN_IN_SEC * 3, tweet_time + FIFTEEN_MIN_IN_SEC, FIFTEEN_MIN_IN_SEC):
 		if not bucket_time in buckets:
 			buckets[bucket_time] = {}
 			buckets[bucket_time]['count'] = 0
