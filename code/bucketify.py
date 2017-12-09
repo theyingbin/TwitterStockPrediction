@@ -45,7 +45,7 @@ def add_to_buckets(tweet):
 		buckets[bucket_time]['subjectivity'] += tweet_weight * analysis.sentiment.subjectivity
 		# print(tweet['created_at'] + " added to " + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(bucket_time)))
 
-with open('../tweets3.json') as input_file:
+with open('../data/tweets3.json') as input_file:
 	for i, line in enumerate(input_file):
 		line = line[:-1]
 		try:
@@ -65,5 +65,5 @@ for key in buckets:
 	buckets[key]['polarity'] /= weight
 	buckets[key]['subjectivity'] /= weight
 	
-with open('bucketed_tweets.json', 'w') as outfile:
+with open('../data/bucketed_tweets.json', 'w') as outfile:
 	json.dump(buckets, outfile)

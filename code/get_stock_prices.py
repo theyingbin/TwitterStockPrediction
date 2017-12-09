@@ -72,6 +72,8 @@ def get_past_stock_price(stock_check_stop):
 
         #new_dict_json = [{"time": k, "stock_price": v} for k,v in new_dict_item]
 		
+        thefile = open('minutestock.txt', 'w')
+		
 		#new_list is a list that contains 7 lists, one for each days
 		#Inside each day-list, each item is a list representing each minute
 		#during the stock market hours.
@@ -80,7 +82,7 @@ def get_past_stock_price(stock_check_stop):
             thefile.write("%s\n" % item)
             #print (item)
 			
-        with open('json_minute_stock.json', "w", encoding="utf8") as outfile:
+        with open('../data/json_minute_stock.json', "w", encoding="utf8") as outfile:
             json.dump(new_dict_,outfile)
 			
         #with open('json_minute_stock.json') as json_data:

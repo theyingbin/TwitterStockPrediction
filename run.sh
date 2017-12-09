@@ -1,3 +1,4 @@
 #!/bin/bash
 
-python3 ./code/scraper.py
+python ./code/bucketify.py 
+python ./code/predictor.py

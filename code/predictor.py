@@ -41,10 +41,10 @@ def load_data():
 	global ground_truth
 	global bucket_data
 
-	with open('json_minute_stock.json') as input_file:
+	with open('../data/json_minute_stock.json') as input_file:
 		ground_truth_dict = json.load(input_file)
 		
-	with open('bucketed_tweets.json') as input_file:
+	with open('../data/bucketed_tweets.json') as input_file:
 		bucket_data_dict = json.load(input_file)
 
 	stock_times = ground_truth_dict.keys()
