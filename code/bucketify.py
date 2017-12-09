@@ -1,17 +1,17 @@
 import json
 import time
 
-FIFTEEN_IN_SEC = 15 * 60
+FIFTEEN_MIN_IN_SEC = 15 * 60
 
 buckets = {}
 
 def get_closest_bucket(tweet_time):
 	epoch_time = time.mktime(time.strptime(tweet_time,"%a %b %d %H:%M:%S +0000 %Y"))
-	return int(epoch_time - (epoch_time % FIFTEEN_IN_SEC))
+	return int(epoch_time - (epoch_time % FIFTEEN_MIN_IN_SEC))
 
 def add_to_buckets(tweet):
 	tweet_time = get_closest_bucket(tweet['created_at'])
-	for bucket_time in range(tweet_time - FIFTEEN_IN_SEC * 3, tweet_time + FIFTEEN_IN_SEC, FIFTEEN_IN_SEC):
+	for bucket_time in range(tweet_time - FIFTEEN_MIN_IN_SEC * 3, tweet_time + FIFTEEN_MIN_IN_SEC, FIFTEEN_MIN_IN_SEC):
 		if not bucket_time in buckets:
 			buckets[bucket_time] = {}
 			buckets[bucket_time]['count'] = 0
@@ -28,7 +28,7 @@ def add_to_buckets(tweet):
 		buckets[bucket_time]['profile_picture'] += 1 if (tweet['user']['profile_image_url'] != '') else 0
 		# print(tweet['created_at'] + " added to " + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(bucket_time)))
 
-with open('sample_tweets.json') as input_file:
+with open('../tweets.json') as input_file:
 	for i, line in enumerate(input_file):
 		line = line[:-1]
 		try:
