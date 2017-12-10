@@ -6,8 +6,13 @@ import sys
 import datetime
 import tweepy
 from tweepy import OAuthHandler, Stream, StreamListener
-from twitterKeys import CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET
 from time import sleep
+
+# TA Keys for submission
+CONSUMER_KEY="a8cP5hihOsL74p0K3yWTW1Wtn"
+CONSUMER_SECRET="yhNYrOPHQ86XP0e7lG8e8kYbo8KCwSLveo6e68sIxp2GXIsx1H"
+ACCESS_TOKEN="917234971072270337-BdTFplE5lPpLSpQZJm3X1sQ6yllT8CT"
+ACCESS_TOKEN_SECRET="S9yQCQrs2q06gSeikhGQZEaC4lKS1Vd4K8biYhKPCvhvj"
 
 # Stocks in the S&P 100 Index
 SNP_100 = ['$AAPL','$ABBV','$ABT','$ACN','$AGN','$AIG','$ALL',
@@ -193,12 +198,15 @@ class TweetScraper():
                             tweets.append(tweet._json)
                             found_ids.add(tweet._json['id'])
                             unique_tweets += 1
-
-                    append_to_file('tweets', tweets)
+                    try:
+                        append_to_file('tweets', tweets)
+                    except PermissionError:
+                        continue
+                        
                     total_tweets += unique_tweets
                     print('found ' + str(unique_tweets) + ' unique tweets')
             if(found_ids):
- +                self.max_id = min(found_ids) - 1
+                self.max_id = min(found_ids) - 1
 
         except tweepy.TweepError as e:
             print('Error ' + e + ' occured.')
