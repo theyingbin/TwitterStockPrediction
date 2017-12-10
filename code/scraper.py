@@ -166,6 +166,9 @@ def append_to_file(file_name, data):
 #     def on_error(self, status):
 #         print(status)  
 
+tweet_hashes = set([])
+user_hashes = set([])
+
 class TweetScraper():
     def __init__(self, stocks):
         self.queries = get_query_from_stocks(stocks)
@@ -182,8 +185,6 @@ class TweetScraper():
             found_ids = set()
             for query in self.queries:
                 new_tweets = self.api.search(query, count=100) if self.max_id is None else self.api.search(query, count=100, max_id=self.max_id, since_id=938578038392008706)
-                  
-                print('found',len(new_tweets),'tweets')
                 
                 if not new_tweets:
                     print('no tweets found')
@@ -191,6 +192,8 @@ class TweetScraper():
                     unique_tweets = 0
                     tweets = []
                     for tweet in new_tweets:
+                        tweet_hashes.add(tweet._json['id'])
+                        user_hashes.add(tweet._json['user']['id'])
                         if tweet._json['id'] not in found_ids:
                             if is_spam(tweet._json):
                                 continue
@@ -204,7 +207,8 @@ class TweetScraper():
                         continue
                         
                     total_tweets += unique_tweets
-                    print('found ' + str(unique_tweets) + ' unique tweets')
+                    print('found ' + str(total_tweets) + ' usuable/nonspam tweets from ' + str(len(tweet_hashes)) + ' tweets from ' + str(len(user_hashes)) + ' unique users')
+            
             if(found_ids):
                 self.max_id = min(found_ids) - 1
 
