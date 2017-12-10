@@ -6,8 +6,13 @@ import sys
 import datetime
 import tweepy
 from tweepy import OAuthHandler, Stream, StreamListener
-from twitterKeys import CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET
 from time import sleep
+
+# TA Keys for submission
+CONSUMER_KEY="a8cP5hihOsL74p0K3yWTW1Wtn"
+CONSUMER_SECRET="yhNYrOPHQ86XP0e7lG8e8kYbo8KCwSLveo6e68sIxp2GXIsx1H"
+ACCESS_TOKEN="917234971072270337-BdTFplE5lPpLSpQZJm3X1sQ6yllT8CT"
+ACCESS_TOKEN_SECRET="S9yQCQrs2q06gSeikhGQZEaC4lKS1Vd4K8biYhKPCvhvj"
 
 # Stocks in the S&P 100 Index
 SNP_100 = ['$AAPL','$ABBV','$ABT','$ACN','$AGN','$AIG','$ALL',
@@ -25,9 +30,12 @@ SNP_100 = ['$AAPL','$ABBV','$ABT','$ACN','$AGN','$AIG','$ALL',
             '$SO','$SPG','$T','$TGT','$TWX','$TXN','$UNH','$UNP',
             '$UPS','$USB','$UTX','$V','$VZ','$WBA','$WFC','$WMT','$XOM']
 
+# checks whether or not a tweet is considered spam
+# we want to filter out tweets that have more than 3 tickers or are less than 3 words in len since they don't give much info
 def is_spam(tweet):
   return len(tweet['entities']['symbols']) > 3 or len(remove_non_text(tweet).split(" ")) < 3
 
+# removes tickers from the tweet since the individual tickers aren't relevant to evaluating the s&p 100 as a while
 def remove_non_text(tweet):
   fields = {'urls', 'user_mentions', 'symbols'}
   text = tweet['text']
@@ -42,7 +50,7 @@ def remove_non_text(tweet):
 # split what we want to search into multiple queries
 def get_query_from_stocks(stocks):
     
-    # partition all the stocks to max of 10 stocks per query
+    # partition all the stocks to max of 17 stocks per query -- this lmits the "complexity" of the query
     partitions = []
     curStocks = []
     for stock in stocks:
@@ -59,38 +67,16 @@ def get_query_from_stocks(stocks):
         queries.append(' OR '.join(partition))
     return queries
 
+# creates the API to search twitter data from
 def load_api():
     # authenicates the user
     auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
     auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
-    # load the twitter API via tweepy
     return tweepy.API(auth, wait_on_rate_limit=True)
-            
-stock_val = 0
-stock_data = []
-# def get_stock_price(stock_check_stop):
-#     global stock_val, stock_data
-#     if not stock_check_stop.is_set():
-#         # Query google for S&P100 Index value
-#         stockName = 'INDEXSP:SP100'
-#         query = {'q': stockName, 'output': 'json'}
-#         r = requests.get('https://finance.google.com/finance', params=query)
-#         json_string = bytes.decode(r.content)
-#         json_string = json_string.split("[", 1)[1]
-#         json_string = json_string[:-2]
-#         json_stock = json.loads(json_string)
-#         stock_val = json_stock['l']
-        
-#         # Rerun query in 15 minutes
-#         threading.Timer(15*60, get_stock_price, [stock_check_stop]).start()
 
-#         # Also dump time and stock price to a file
-#         curTime = datetime.datetime.now()
-#         stockInfo = {'stock_name': stockName, 'stock_price': stock_val, 'timestamp': str(curTime)}
-#         stock_data.append(stockInfo)
-#         write_to_file('stock_prices', stock_data)
 
 file_name_map = {}
+# function to add a tweet to a file
 def append_to_file(file_name, data):
     global file_name_map
     # Ensure that file name does not already exist,
@@ -113,53 +99,9 @@ def append_to_file(file_name, data):
         outfile.write(s)
 
 
-# class StreamHandler(StreamListener):
-#     def __init__(self):
-#         self.scraped_data = []
-#         self.tweet_count = 0
-#         self.filtered_data = []
-#         # We will be adding more important attributes here. we should use follower count as a metric since retweets/likes not the best
-#         # May want to requery for better values for these attributes in the future
-#         self.importantAttrs = ['text', 'created_at', 'quote_count', 'reply_count', 'retweet_count', 'favorite_count']
-#         # We might also want to incorporate user attributes in the future
-#         self.importantUserAttrs = ['followers_count', 'friends_count', 'listed_count', 'verified']
 
-#     def on_data(self, data):
-#         global stock_val
-
-#         tweet_data = json.loads(data)
-#         self.scraped_data.append(tweet_data)
-#         self.tweet_count += 1
-
-#         # Filter for the important attributes of the tweet
-#         filtered_tweet = {}
-#         for attr in self.importantAttrs:
-#             if attr in tweet_data:
-#                 filtered_tweet[attr] = tweet_data[attr]
-#             else:
-#                 print(attr + " doesn't exist in the tweet")
-
-#         for attr in self.importantUserAttrs:
-#             user_data = tweet_data['user']
-#             if attr in user_data:
-#                 filtered_tweet[attr] = user_data[attr]
-#             else:
-#                 print(attr + " doesn't exist in the tweet")
-
-#         self.filtered_data.append(filtered_tweet)
-
-#         print('#############################')
-#         print('Tweet: ' + tweet_data['text'])
-#         print('S&P100 Val: ' + str(stock_val))
-
-#         # Dump data to files
-#         write_to_file('sample_tweets', self.scraped_data)
-#         write_to_file('filtered_tweets', self.filtered_data)
-
-#         return True
-
-#     def on_error(self, status):
-#         print(status)  
+tweet_hashes = set([])
+user_hashes = set([])
 
 class TweetScraper():
     def __init__(self, stocks):
@@ -175,17 +117,22 @@ class TweetScraper():
         print(len(self.queries))
         try:
             found_ids = set()
+            # queries using the search api using all the queries we made
             for query in self.queries:
                 new_tweets = self.api.search(query, count=100) if self.max_id is None else self.api.search(query, count=100, max_id=self.max_id, since_id=938578038392008706)
-
-                print('found',len(new_tweets),'tweets')
                 
                 if not new_tweets:
                     print('no tweets found')
                 else:
                     unique_tweets = 0
                     tweets = []
+
+                    # for every tweet, we check if we have seen it before
+                    # if not, append to the file
                     for tweet in new_tweets:
+                        tweet_hashes.add(tweet._json['id'])
+                        user_hashes.add(tweet._json['user']['id'])
+                        
                         if tweet._json['id'] not in found_ids:
                             if is_spam(tweet._json):
                                 continue
@@ -193,10 +140,14 @@ class TweetScraper():
                             tweets.append(tweet._json)
                             found_ids.add(tweet._json['id'])
                             unique_tweets += 1
-
-                    append_to_file('tweets', tweets)
+                    try:
+                        append_to_file('tweets', tweets)
+                    except PermissionError:
+                        continue
+                        
                     total_tweets += unique_tweets
-                    print('found ' + str(unique_tweets) + ' unique tweets')
+                    print('found ' + str(total_tweets) + ' usuable/nonspam tweets from ' + str(len(tweet_hashes)) + ' tweets from ' + str(len(user_hashes)) + ' unique users')
+            
             if(found_ids):
                 self.max_id = min(found_ids) - 1
 
@@ -208,22 +159,14 @@ class TweetScraper():
 if __name__ == '__main__':
 
     scraper = TweetScraper(SNP_100)
+
+    # loop to scrape twitter data
     while(True):
         print('scraping')
         rc = scraper.scrape()
         if rc == -1:
+            # if we get a tweepy error, good chance its a rate limit error so we should just sleep
             sleep(60)
         elif rc == 0:
             break
-    
-    # print("Starting stock value logging...")
-    # stock_check_stop = threading.Event()
-    # get_stock_price(stock_check_stop)
-
-    # print("Monitoring tweets...")
-    # handler = StreamHandler()
-    # auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-    # auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
-    # stream = Stream(auth, handler)
-    # stream.filter(track=SNP_100, async=True)
     
