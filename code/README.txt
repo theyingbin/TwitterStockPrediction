@@ -2,3 +2,4 @@
 * bucketify.py: This file looks at the tweets in tweets.json and creates buckets for the tweets based on when the tweet happened. The buckets are 1 hour long 15 minute rolling windows as explained in the report
 * get_stock_prices.py: This file queries google finance for the latest stock data about the s&p100 and puts the data into json_minute_stock.json
 * predictor.py: This file looks at the bucketed data and the stock data to create and tests a model. It outputs the accuracy, precision, recall, and f1-score. For the model, we chose to use a bagging classifier
+* run.sh: This file runs the commands needed for the TAs to test our project
