@@ -22,10 +22,12 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.externals import joblib
+from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import normalize
 
 from scipy.spatial import distance
 from scipy.ndimage.filters import gaussian_filter
+
 
 FIFTEEN_MIN_IN_SEC = 15 * 60
 
@@ -36,15 +38,19 @@ bucket_data_dict = {}
 
 bucket_keys = {'count', 'retweets', 'favorites', 'followers', 'verified', 'profile_picture', 'polarity', 'subjectivity'}
 
+# returns the time associated with the next bucket we want to obtain
 def get_next_bucket_time(curr):
 	return str(int(curr) + FIFTEEN_MIN_IN_SEC);
 
+# given a mapping of time -> price, return all the prices
 def convert_bucket_to_array(bucket):
 	buck_arr = []
 	for key in bucket_keys:
 		buck_arr.append(bucket[key])
 	return buck_arr
 
+# looks at the data for the tweets(stored in bucket_tweets.json) and stock prices(stored in json_minute_stock.json)
+# creates the data structures we need with them
 def load_data():
 	global ground_truth
 	global bucket_data
@@ -69,7 +75,7 @@ def load_data():
 	ground_truth = np.array(ground_truth[1:], dtype=float)
 	bucket_data = np.matrix(bucket_data[:-1], dtype=float)
 
-
+# Returns the classifier that we chose to use
 def get_classifier():
 	# n_jobs = -1 allows us to use all cores of our machine
 	# return RandomForestClassifier(n_estimators=10)
@@ -79,6 +85,7 @@ def get_classifier():
 	# return AdaBoostClassifier()
 	# return SVC()
 
+# Trains the model with the data that we have and puts model into a file
 def train_model(output_file_name):
 	# Create the classifier and fit the data to it
 	my_classifier = get_classifier()
@@ -87,7 +94,7 @@ def train_model(output_file_name):
 	# Dump the generated classifier to an output file for later use
 	joblib.dump(my_classifier, output_file_name)
 
-
+# Uses K-fold cross validation to get the accuracy, precision, recall, and f1-score associated with the model we chose
 def test_model(splits):
 	accurs = []
 	recalls = []
@@ -124,7 +131,5 @@ def test_model(splits):
 
 load_data()
 print("Testing on " + str(len(ground_truth)) + " buckets")
-test_model(10)
+test_model(5)
 
-# for i in range(1, 120):
-# 	test_model(10, tuple([i])) 
