@@ -169,4 +169,3 @@ if __name__ == '__main__':
             sleep(60)
         elif rc == 0:
             break
-    
