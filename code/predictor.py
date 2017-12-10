@@ -38,9 +38,13 @@ bucket_data_dict = {}
 
 bucket_keys = {'count', 'retweets', 'favorites', 'followers', 'verified', 'profile_picture', 'polarity', 'subjectivity'}
 
-# returns the time associated with the next bucket we want to obtain
-def get_next_bucket_time(curr):
-	return str(int(curr) + FIFTEEN_MIN_IN_SEC);
+# returns the time associated with the stock end time
+def get_end_stock_time(curr):
+	return str(int(curr) + FIFTEEN_MIN_IN_SEC*4);
+
+# returns the time associated with the start of the bucket, given a stock time
+def get_start_tweet_time(curr):
+	return str(int(curr) - FIFTEEN_MIN_IN_SEC*4);
 
 # given a mapping of time -> price, return all the prices
 def convert_bucket_to_array(bucket):
@@ -64,22 +68,22 @@ def load_data():
 		bucket_data_dict = json.load(input_file)
 
 	stock_times = ground_truth_dict.keys()
-	for stock_time in stock_times:
-		end_time_str = get_next_bucket_time(stock_time)
-		if (stock_time in bucket_data_dict) and (end_time_str in stock_times):
-			start_bucket_stock = ground_truth_dict[stock_time]
-			end_bucket_stock = ground_truth_dict[end_time_str]
+	for start_stock_time in stock_times:
+		tweet_bucket_time = get_start_tweet_time(start_stock_time)
+		end_stock_time = get_end_stock_time(start_stock_time)
+		if (tweet_bucket_time in bucket_data_dict) and (end_stock_time in stock_times):
+			start_bucket_stock = ground_truth_dict[start_stock_time]
+			end_bucket_stock = ground_truth_dict[end_stock_time]
 			ground_truth.append(1 if (end_bucket_stock - start_bucket_stock > 0) else 0)
-			bucket_data.append(convert_bucket_to_array(bucket_data_dict[stock_time]))
+			bucket_data.append(convert_bucket_to_array(bucket_data_dict[tweet_bucket_time]))
 
-	ground_truth = np.array(ground_truth[1:], dtype=float)
-	bucket_data = np.matrix(bucket_data[:-1], dtype=float)
+	ground_truth = np.array(ground_truth, dtype=float)
+	bucket_data = np.matrix(bucket_data, dtype=float)
 
 # Returns the classifier that we chose to use
 def get_classifier():
 	# n_jobs = -1 allows us to use all cores of our machine
-	# return RandomForestClassifier(n_estimators=10)
-	return BaggingClassifier(RandomForestClassifier(n_estimators=10), max_samples=0.8, max_features=0.8)
+	return RandomForestClassifier(n_estimators=10)
 	# return KNeighborsClassifier()
 	# return MLPClassifier(activation='logistic')
 	# return AdaBoostClassifier()
