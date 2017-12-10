@@ -38,7 +38,7 @@ bucket_data_dict = {}
 
 bucket_keys = {'count', 'retweets', 'favorites', 'followers', 'verified', 'profile_picture', 'polarity', 'subjectivity'}
 
-# returns the time associated with the stock end time
+# returns the time associated with the stock end time, given a stock time
 def get_end_stock_time(curr):
 	return str(int(curr) + FIFTEEN_MIN_IN_SEC*4);
 
@@ -136,4 +136,3 @@ def test_model(splits):
 load_data()
 print("Testing on " + str(len(ground_truth)) + " buckets")
 test_model(5)
-
