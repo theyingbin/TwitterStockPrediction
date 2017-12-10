@@ -28,6 +28,7 @@ def get_past_stock_price(stock_check_stop):
 		#include only the minute and closing price for each minute.
         data_split_clean = [[item[0], item[1]] for item in data_split_clean_pre]
 		
+		#split up data_split_clean into "x" number of lists, "x" is number of days
         seperate_days_data = []
         count1 = 0
         count2 = 0
@@ -40,35 +41,27 @@ def get_past_stock_price(stock_check_stop):
                 seperate_days_data.append(data_split_clean[count1:count2+1])
             else:
                 count2+=1
-				
+		
+        #Remove first letter from the minute 0 of each days
+        #resulting value should be a number that represents the POSIX time
+        #for minute 0.		
         new_list_0 = [[[item[1:] if list[0] == minute and minute[0] == item else item for item in minute] for minute in list] for list in seperate_days_data]
 		
+        #Convert every minute in each day into its equivalent POSIX time.
         new_list = [[[str(int(item)*60 + int(list[0][0])) if list[0] != minute and minute[0] == item else item for item in minute] for minute in list] for list in new_list_0]
 		
         new_dict_ = {}
 		
+		#For item in list, convert the relation into a dictionary
+		#Each dictionary entry maps unix time to closing price for each minute
         for list in new_list:
             for item in list:
                 a = int(item[0])
                 new_dict_[a] = float(item[1])
-
-        #new_dict_json = [{"time": k, "stock_price": v} for k,v in new_dict_item]
 		
-        thefile = open('minutestock.txt', 'w')
-		
-		#new_list is a list that contains 7 lists, one for each days
-		#Inside each day-list, each item is a list representing each minute
-		#during the stock market hours.
-		#Each item contains parameters in the form of unix time, closing price for each minute
-        for item in new_list:
-            thefile.write("%s\n" % item)
-            #print (item)
-			
+        #write the resulting dictionary into a json file.		
         with open('../data/json_minute_stock.json', "w", encoding="utf8") as outfile:
             json.dump(new_dict_,outfile)
-			
-        #with open('json_minute_stock.json') as json_data:
-        #    d = json.load(json_data)
 
 def determine_opcl_price_1hr(data):
     minute_start = 0
