@@ -1,6 +1,7 @@
 import json
 import time
 import numpy as np
+import warnings
 
 from itertools import repeat
 from multiprocessing import Pool
@@ -10,8 +11,10 @@ from sklearn import preprocessing
 from sklearn.model_selection import KFold
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
+from sklearn.metrics import precision_score
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import recall_score
 from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import BaggingClassifier
@@ -52,6 +55,8 @@ def load_data():
 	global ground_truth
 	global bucket_data
 
+	warnings.filterwarnings("ignore")
+
 	with open('../data/json_minute_stock.json') as input_file:
 		ground_truth_dict = json.load(input_file)
 		
@@ -73,13 +78,10 @@ def load_data():
 # Returns the classifier that we chose to use
 def get_classifier():
 	# n_jobs = -1 allows us to use all cores of our machine
-	# return MLPClassifier(activation='logistic')  # can try to set hidden_layer_sizes but found that 1 HL works best. also after ~50 nodes, its about the same
-	# return RandomForestClassifier(n_estimators=10, n_jobs = -1)
-	# return BaggingClassifier(KNeighborsClassifier(),max_samples=0.5, max_features=0.5)
-	# return MLP()
+	# return RandomForestClassifier(n_estimators=10)
 	return BaggingClassifier(RandomForestClassifier(n_estimators=10), max_samples=0.8, max_features=0.8)
 	# return KNeighborsClassifier()
-	# return MLPClassifier()
+	# return MLPClassifier(activation='logistic')
 	# return AdaBoostClassifier()
 	# return SVC()
 
@@ -95,23 +97,36 @@ def train_model(output_file_name):
 # Uses K-fold cross validation to get the accuracy, precision, recall, and f1-score associated with the model we chose
 def test_model(splits):
 	accurs = []
-	kf = KFold(n_splits=splits, shuffle=True)
-	for train_index, test_index in kf.split(bucket_data):
-		X_train, X_test = bucket_data[train_index], bucket_data[test_index]
-		y_train, y_test = ground_truth[train_index], ground_truth[test_index]
+	recalls = []
+	f1_scores = []
+	precisions = []
+	for i in range(0, 4):
+		kf = KFold(n_splits=splits, shuffle=True)
+		for train_index, test_index in kf.split(bucket_data):
+			X_train, X_test = bucket_data[train_index], bucket_data[test_index]
+			y_train, y_test = ground_truth[train_index], ground_truth[test_index]
 
-		# Create the classifier and trains it on the the training data
-		my_classifier = get_classifier()
-		my_classifier.fit(X_train, y_train)
+			# Create the classifier and trains it on the the training data
+			my_classifier = get_classifier()
+			my_classifier.fit(X_train, y_train)
 
-		# Tests the classifier on the testing data and prints the accuracy results
-		predictions = my_classifier.predict(X_test)
-		print(predictions)
-		print(classification_report(y_test, predictions))
-		accuracy = accuracy_score(y_test, predictions)
-		print("accuracy: " + str(accuracy))
-		accurs.append(float(accuracy))
+			# Tests the classifier on the testing data and prints the accuracy results
+			predictions = my_classifier.predict(X_test)
+			recall = recall_score(y_test, predictions)
+			precision = precision_score(y_test, predictions)
+			f1score = f1_score(y_test, predictions)
+			accuracy = accuracy_score(y_test, predictions)
+			
+			accurs.append(float(accuracy))
+			recalls.append(float(recall))
+			precisions.append(float(precision))
+			f1_scores.append(float(f1score))
 
+		print("Running cross_fold #" + str(i+1))
+
+	print("average precision: " + str(np.mean(precisions)))
+	print("average recall: " + str(np.mean(recalls)))
+	print("average f1_scores: " + str(np.mean(f1_scores)))
 	print("average accuracy: " + str(np.mean(accurs)))
 
 load_data()
