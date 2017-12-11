@@ -60,7 +60,7 @@ def get_past_stock_price(stock_check_stop):
                 new_dict_[a] = float(item[1])
 		
         #write the resulting dictionary into a json file.		
-        with open('../data/json_minute_stock.json', "w", encoding="utf8") as outfile:
+        with open('../data/json_minute_stock.json', "w") as outfile:
             json.dump(new_dict_,outfile)
 
 def determine_opcl_price_1hr(data):

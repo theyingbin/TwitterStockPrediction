@@ -64,7 +64,7 @@ with open('../data/tweets.json') as input_file:
 	# Loop through all the tweets in the files and add them to buckets
 	for i, line in enumerate(input_file):
 		if (i % 50 == 0):
-			print("\r" + str(len(tweet_ids)) + " tweets processed", end="")
+			print("\r" + str(len(tweet_ids)) + " tweets processed"),
 		line = line[:-1]
 		try:
 			tweet = json.loads(line)
@@ -73,7 +73,7 @@ with open('../data/tweets.json') as input_file:
 		
 		add_to_buckets(tweet)
 	
-	print("\r" + str(len(tweet_ids)) + " tweets processed", end="")
+	print("\r" + str(len(tweet_ids)) + " tweets processed"),
 		
 # Each bucket contains the sum for parameters of the tweets in it, here we compute the average for each
 for key in buckets:
